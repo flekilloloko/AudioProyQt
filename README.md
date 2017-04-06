@@ -1,0 +1,1 @@
+Software que acepta datos que representan muestras AD tomadas del arduino, y grafica su espectro en un gráfico, luego de hacerle la transformada rapida de fourier. También permite al usuario elegir los parámetros del filtrado digital que realizará la placa.
