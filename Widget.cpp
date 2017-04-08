@@ -17,6 +17,7 @@ Widget::Widget(QWidget *parent)
 
     float fmuestreo = 50000;
     QElapsedTimer tiemp;
+	len = 1024;
     
     //for(int i=0 ; i<len ; i++) muestrixs[i] = qSin(2*M_PI*3000*i*(1/fmuestreo));
 
