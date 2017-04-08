@@ -12,13 +12,13 @@
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
-{Bueno
+{
     ui->setupUi(this);
-    float muestrixs[len];
-    float espectrix[len];
-    int fmuestreo = 50000;
-    
-    for(int i=0 ; i<len ; i++) muestrixs[i] = qsin(2*M_PI*3000*i*(1/fmuestreo);
+
+    float fmuestreo = 50000;
+    QElapsedTimer tiemp;
+    
+    //for(int i=0 ; i<len ; i++) muestrixs[i] = qSin(2*M_PI*3000*i*(1/fmuestreo));
 
     arduino_is_available = false;
     arduino_port_name = "";
@@ -29,13 +29,15 @@ Widget::Widget(QWidget *parent)
     armandoEspectro = false;
 
     espectro = "";
-    
-    long len = 1024;
+    
+
 
    // 1024-point FFT object constructed.
-   fftreal::FFTReal <float> fft_object (len);
-   fft_object.do_fft(espectrix, muestrixs);
-   
+
+
+    //qDebug()<<tiemp.nsecsElapsed();
+
+
  
     qDebug() << "Number of available ports: " << QSerialPortInfo::availablePorts().length();
     foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()){
@@ -45,7 +47,7 @@ Widget::Widget(QWidget *parent)
         }
         qDebug() << "Has Product ID: " << serialPortInfo.hasProductIdentifier();
         if(serialPortInfo.hasProductIdentifier()){
-            qDebug() << "Product ID: " << serialPortInfo.produc tIdentifier();
+            qDebug() << "Product ID: " << serialPortInfo.productIdentifier();
         }
     }
 
@@ -77,10 +79,10 @@ Widget::Widget(QWidget *parent)
     }
 
 
-    x.resize(512); y.resize(512);
-    for (int i=0; i<512; i++)
+    x.resize(len); y.resize(len);
+    for (int i=0; i<len; i++)
     {
-      x[i] = i*(fmuestreo/1024) ; //50k             //x[i] = i*47.157; //48,28877kHz muestreo    20,71uS entre muestras sucesivas
+      x[i] = i*(fmuestreo/1024) ; //50k             //x[i] = i*47.157; //48,28877kHz muestreo    20,71uS entre muestras sucesivas
       y[i] = 0;
     }
 
@@ -90,7 +92,7 @@ Widget::Widget(QWidget *parent)
     ui->grafico->graph(0)->setData(x,y);
     ui->grafico->xAxis->setLabel("Frec");
     ui->grafico->yAxis->setLabel("Módulo");
-    ui->grafico->xAxis->setRange(1, 20000);
+    ui->grafico->xAxis->setRange(1000, 5000);
     ui->grafico->yAxis->setRange(0, 100);
     ui->grafico->xAxis->setScaleType(QCPAxis::stLogarithmic);
     ui->grafico->yAxis->grid()->setVisible(false);
@@ -126,8 +128,10 @@ void Widget::leerPuertoSerie(){
     QTime tiempo;
     int tamano;
     bool esdig=false;
+    float muestrixs[len];
+    float espectrix[len];
     //static int cont = 0;
-
+    ffft::FFTReal <float> fft_object (len);
     //qDebug() << tiempo.elapsed();
     valor = "";
     datosSerie = arduino->readAll();    
@@ -155,10 +159,13 @@ void Widget::leerPuertoSerie(){
                     for(int j = 0;j<frecuencias.at(i).size();j++){
                         if(!frecuencias.at(i)[j].isDigit()) esdig = false;
                     }
-                    if(esdig && i<512)y[i]=frecuencias.at(i).toDouble()/32;
+                    if(esdig && i<512)muestrixs[i]=frecuencias.at(i).toDouble();
 
                 }
                 frecuencias.clear();
+                fft_object.do_fft(espectrix,muestrixs);
+                for (int i=0; i<len; i++) y[i] = espectrix[i]/5; // div 5 para entradas con 1.0 max
+
                 ui->grafico->graph(0)->setData(x,y);
                 ui->grafico->replot();
             } else {
