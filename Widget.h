@@ -32,6 +32,7 @@ private:
     QVector<double> x, y;
     int punteroX;
     int indice;
+    int len;
     QString espectro;
 
 
