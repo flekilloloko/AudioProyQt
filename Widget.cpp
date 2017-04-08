@@ -12,8 +12,13 @@
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Widget)
-{
+{Bueno
     ui->setupUi(this);
+    float muestrixs[len];
+    float espectrix[len];
+    int fmuestreo = 50000;
+    
+    for(int i=0 ; i<len ; i++) muestrixs[i] = qsin(2*M_PI*3000*i*(1/fmuestreo);
 
     arduino_is_available = false;
     arduino_port_name = "";
@@ -24,8 +29,14 @@ Widget::Widget(QWidget *parent)
     armandoEspectro = false;
 
     espectro = "";
+    
+    long len = 1024;
 
-
+   // 1024-point FFT object constructed.
+   fftreal::FFTReal <float> fft_object (len);
+   fft_object.do_fft(espectrix, muestrixs);
+   
+ 
     qDebug() << "Number of available ports: " << QSerialPortInfo::availablePorts().length();
     foreach(const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts()){
         qDebug() << "Has vendor ID: " << serialPortInfo.hasVendorIdentifier();
@@ -34,7 +45,7 @@ Widget::Widget(QWidget *parent)
         }
         qDebug() << "Has Product ID: " << serialPortInfo.hasProductIdentifier();
         if(serialPortInfo.hasProductIdentifier()){
-            qDebug() << "Product ID: " << serialPortInfo.productIdentifier();
+            qDebug() << "Product ID: " << serialPortInfo.produc tIdentifier();
         }
     }
 
@@ -69,7 +80,7 @@ Widget::Widget(QWidget *parent)
     x.resize(512); y.resize(512);
     for (int i=0; i<512; i++)
     {
-      x[i] = i*48.828125*2*M_PI ; //50k             //x[i] = i*47.157; //48,28877kHz muestreo    20,71uS entre muestras sucesivas
+      x[i] = i*(fmuestreo/1024) ; //50k             //x[i] = i*47.157; //48,28877kHz muestreo    20,71uS entre muestras sucesivas
       y[i] = 0;
     }
 
@@ -163,5 +174,3 @@ void Widget::leerPuertoSerie(){
         //qDebug() << tiempo.elapsed();
 
 }
-
-
