@@ -8,6 +8,10 @@
 #include <windows.h>
 #include <math.h>
 #include "fftreal/FFTReal.h"
+#include <complex>
+
+
+#define tamFFT 512
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -17,9 +21,8 @@ Widget::Widget(QWidget *parent)
 
     float fmuestreo = 50000;
     QElapsedTimer tiemp;
-	len = 1024;
     
-    //for(int i=0 ; i<len ; i++) muestrixs[i] = qSin(2*M_PI*3000*i*(1/fmuestreo));
+    //for(int i=0 ; i<tamFFT ; i++) muestrixs[i] = qSin(2*M_PI*3000*i*(1/fmuestreo));
 
     arduino_is_available = false;
     arduino_port_name = "";
@@ -80,10 +83,10 @@ Widget::Widget(QWidget *parent)
     }
 
 
-    x.resize(len); y.resize(len);
-    for (int i=0; i<len; i++)
+    x.resize(tamFFT/2); y.resize(tamFFT/2);
+    for (int i=0; i<tamFFT/2; i++)
     {
-      x[i] = i*(fmuestreo/1024) ; //50k             //x[i] = i*47.157; //48,28877kHz muestreo    20,71uS entre muestras sucesivas
+      x[i] = i*(fmuestreo/(tamFFT)) ; //50k             //x[i] = i*47.157; //48,28877kHz muestreo    20,71uS entre muestras sucesivas
       y[i] = 0;
     }
 
@@ -124,15 +127,17 @@ Widget::~Widget()
 }
 
 void Widget::leerPuertoSerie(){
-    int pos;
-    QString valor = 0, otro;
+    int pos, otro;
+    QString valor = 0;
     QTime tiempo;
     int tamano;
     bool esdig=false;
-    float muestrixs[len];
-    float espectrix[len];
+    len = 1024;
+    float muestrixs[tamFFT];
+    float espectrix[tamFFT] = {0};
+	std::complex<float> espec[tamFFT/2], unImag(0,1);
     //static int cont = 0;
-    ffft::FFTReal <float> fft_object (len);
+    ffft::FFTReal <float> fft_object (tamFFT);
     //qDebug() << tiempo.elapsed();
     valor = "";
     datosSerie = arduino->readAll();    
@@ -148,30 +153,42 @@ void Widget::leerPuertoSerie(){
             }
             QStringList frecuencias = espectro.split(",");
             tamano = frecuencias.size();
-            if(tamano>1024) armandoEspectro = false;
+            if(tamano!=tamFFT+1) armandoEspectro = false;
             //if(espectro.size() > 512) armandoEspectro = false;
             if(armandoEspectro){
 
 
                 espectro = bufferSerie.right(bufferSerie.size()-pos-1);
                 bufferSerie.clear();
-                for(int i=0;i<(frecuencias.size()-1);i++) {
+                for(int i=0;i<tamFFT;i++) {
                     esdig=true;
                     for(int j = 0;j<frecuencias.at(i).size();j++){
-                        if(!frecuencias.at(i)[j].isDigit()) esdig = false;
+                        if(!frecuencias.at(i)[j].isDigit() && frecuencias.at(i)[j] != '.' && frecuencias.at(i)[j] != '-') esdig = false;
                     }
-                    if(esdig && i<512)muestrixs[i]=frecuencias.at(i).toDouble();
-
+                    if(esdig && i<tamFFT && frecuencias.at(i) < 600)muestrixs[i]=frecuencias.at(i).toDouble()/(2);
+                    else if (i==0)
+                        muestrixs[0] = 0;
+                    else
+                        muestrixs[i] = muestrixs[i-1];
+                    otro = i;
                 }
                 frecuencias.clear();
-                fft_object.do_fft(espectrix,muestrixs);
-                for (int i=0; i<len; i++) y[i] = espectrix[i]/5; // div 5 para entradas con 1.0 max
+                if(otro==tamFFT-1)
+                    fft_object.do_fft(espectrix,muestrixs);
+				for (int i =1;i<tamFFT/2-1;i++)
+					espec[i] = espectrix[i] + espectrix[tamFFT/2+i]* unImag ;
+
+				espec[0]=espectrix[0];
+				espec[tamFFT/2]=espectrix[tamFFT/2];
+                for (int i=0; i<tamFFT/2; i++)
+                    y[i] = std::abs(espec[i])/5; // div 5 para entradas con 1.0 max
 
                 ui->grafico->graph(0)->setData(x,y);
                 ui->grafico->replot();
             } else {
 
                 espectro = bufferSerie.right(bufferSerie.size()-pos-1);
+
                 bufferSerie.clear();
                 }
 
