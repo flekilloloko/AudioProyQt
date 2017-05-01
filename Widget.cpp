@@ -21,6 +21,7 @@ Widget::Widget(QWidget *parent)
 
     float fmuestreo = 50000;
     QElapsedTimer tiemp;
+    QVector<QCPGraphData> datosFrec(tamFFT/2);
     
     //for(int i=0 ; i<tamFFT ; i++) muestrixs[i] = qSin(2*M_PI*3000*i*(1/fmuestreo));
 
@@ -86,12 +87,53 @@ Widget::Widget(QWidget *parent)
     x.resize(tamFFT/2); y.resize(tamFFT/2);
     for (int i=0; i<tamFFT/2; i++)
     {
-      x[i] = i*(fmuestreo/(tamFFT)) ; //50k             //x[i] = i*47.157; //48,28877kHz muestreo    20,71uS entre muestras sucesivas
-      y[i] = 0;
+      datosFrec[i].key = i*(fmuestreo/(tamFFT)) ; //50k             //x[i] = i*47.157; //48,28877kHz muestreo    20,71uS entre muestras sucesivas
+      datosFrec[i].value = 0;
     }
 
 
+    ui->grafico->plotLayout()->clear();
+    ui->grafico->setFixedHeight(600);
+    ui->grafico->setFixedWidth(600);
+    QCPAxisRect *frecuenciasTotal = new QCPAxisRect(ui->grafico);
+    frecuenciasTotal->setupFullAxesBox(true);
+    frecuenciasTotal->axis(QCPAxis::atRight, 0)->setTickLabels(true);
 
+    QCPAxisRect *frecuenciasIndiv = new QCPAxisRect(ui->grafico);
+    ui->grafico->plotLayout()->addElement(0, 0, frecuenciasTotal);
+    ui->grafico->plotLayout()->addElement(1, 0, frecuenciasIndiv);
+    frecuenciasTotal->setMaximumSize(600, 250);
+    frecuenciasTotal->setMinimumSize(600, 250);
+
+    QCPMarginGroup *margenes = new QCPMarginGroup(ui->grafico);
+    frecuenciasTotal->setMarginGroup(QCP::msLeft | QCP::msRight, margenes);
+    frecuenciasIndiv->setMarginGroup(QCP::msLeft | QCP::msRight, margenes);
+
+    foreach (QCPAxisRect *rect, ui->grafico->axisRects())
+    {
+      foreach (QCPAxis *axis, rect->axes())
+      {
+        axis->setLayer("axis");
+        axis->grid()->setLayer("grill");
+      }
+    }
+
+    QCPGraph *espectroTotal = ui->grafico->addGraph(frecuenciasTotal->axis(QCPAxis::atBottom), frecuenciasTotal->axis(QCPAxis::atLeft));
+    espectroTotal->data()->set(datosFrec);
+    espectroTotal->valueAxis()->setRange(0, 100);
+    espectroTotal->rescaleKeyAxis();
+    espectroTotal->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black), QBrush(Qt::white), 6));
+    espectroTotal->setPen(QPen(QColor(120, 120, 120), 2));
+
+    QCPGraph *espectroIndiv = ui->grafico->addGraph(frecuenciasIndiv->axis(QCPAxis::atBottom), frecuenciasIndiv->axis(QCPAxis::atLeft));
+    espectroIndiv->data()->set(datosFrec);
+    espectroIndiv->valueAxis()->setRange(0, 100);
+    espectroIndiv->rescaleKeyAxis();
+    espectroIndiv->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, QPen(Qt::black), QBrush(Qt::white), 6));
+    espectroIndiv->setPen(QPen(QColor(120, 120, 120), 2));
+    espectroIndiv->rescaleAxes();
+
+    /*
     QCPGraph *subGraf = ui->grafico->addGraph();
     ui->grafico->graph(0)->setData(x,y);
     QCPGraph *porcion = ui->grafico->addGraph();
@@ -115,7 +157,7 @@ Widget::Widget(QWidget *parent)
 
     ui->grafico->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
-    ui->grafico->replot();
+    ui->grafico->replot();*/
 
 
 
