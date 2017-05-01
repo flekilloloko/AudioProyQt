@@ -11,7 +11,7 @@
 #include <complex>
 
 
-#define tamFFT 512
+#define tamFFT 1024
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -94,12 +94,13 @@ Widget::Widget(QWidget *parent)
 
     QCPGraph *subGraf = ui->grafico->addGraph();
     ui->grafico->graph(0)->setData(x,y);
+    QCPGraph *porcion = ui->grafico->addGraph();
     ui->grafico->xAxis->setLabel("Frec");
     ui->grafico->yAxis->setLabel("Módulo");
-    ui->grafico->xAxis->setRange(1000, 5000);
+    ui->grafico->xAxis->setRange(900, 9000);
     ui->grafico->yAxis->setRange(0, 100);
     ui->grafico->xAxis->setScaleType(QCPAxis::stLogarithmic);
-    ui->grafico->yAxis->grid()->setVisible(false);
+    ui->grafico->yAxis->grid()->setVisible(true);
 
     QSharedPointer<QCPAxisTickerLog> logTicker(new QCPAxisTickerLog);
     ui->grafico->xAxis->setTicker(logTicker);
@@ -165,7 +166,7 @@ void Widget::leerPuertoSerie(){
                     for(int j = 0;j<frecuencias.at(i).size();j++){
                         if(!frecuencias.at(i)[j].isDigit() && frecuencias.at(i)[j] != '.' && frecuencias.at(i)[j] != '-') esdig = false;
                     }
-                    if(esdig && i<tamFFT && frecuencias.at(i) < 600)muestrixs[i]=frecuencias.at(i).toDouble()/(2);
+                    if(esdig && i<tamFFT && frecuencias.at(i) < 600)muestrixs[i]=frecuencias.at(i).toDouble();//(2^1);//     /2
                     else if (i==0)
                         muestrixs[0] = 0;
                     else
@@ -181,7 +182,7 @@ void Widget::leerPuertoSerie(){
 				espec[0]=espectrix[0];
 				espec[tamFFT/2]=espectrix[tamFFT/2];
                 for (int i=0; i<tamFFT/2; i++)
-                    y[i] = std::abs(espec[i])/5; // div 5 para entradas con 1.0 max
+                    y[i] = std::abs(espec[i]);//14; // div 5 para entradas con 1.0 max
 
                 ui->grafico->graph(0)->setData(x,y);
                 ui->grafico->replot();
