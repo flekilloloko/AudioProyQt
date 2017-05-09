@@ -1,2 +1,0 @@
-Tiempo de conversion = 29 us.
-Tiempo de iniciado fft = 35 us.
