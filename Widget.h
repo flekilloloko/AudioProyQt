@@ -36,7 +36,7 @@ private:
     int indice;
     int len;
     bool handShake;
-    int FCbaja;//, FCalta;
+    int FCalta;//, FCalta;
     QString espectro;
 
 

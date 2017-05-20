@@ -71,7 +71,7 @@ Widget::Widget(QWidget *parent)
     if(arduino_is_available){
         // open and configure the serialport
         arduino->setPortName(arduino_port_name);
-        arduino->open(QSerialPort::ReadOnly);
+        arduino->open(QSerialPort::ReadWrite);
         arduino->setBaudRate(QSerialPort::Baud9600);
         arduino->setDataBits(QSerialPort::Data8);
         arduino->setParity(QSerialPort::NoParity);
@@ -175,6 +175,7 @@ void Widget::leerPuertoSerie(){
     QTime tiempo;
     int tamano;
     bool esdig=false;
+    QChar frecu[10];
     len = 1024;
     float muestrixs[tamFFT];
     float espectrix[tamFFT] = {0};
@@ -196,7 +197,7 @@ void Widget::leerPuertoSerie(){
             }
             QStringList frecuencias = espectro.split(",");
             tamano = frecuencias.size();
-            if(tamano!=tamFFT+1) armandoEspectro = false;
+            //ESTO VA if(tamano!=tamFFT+1) armandoEspectro = false;
             //if(espectro.size() > 512) armandoEspectro = false;
             if(armandoEspectro){
 
@@ -210,7 +211,15 @@ void Widget::leerPuertoSerie(){
                         if(frecuencias.at(i)[j] == 'F'){
                             if(frecuencias.at(i)[j+1] == 'A'){
                                 otro = j+2;
-                                while(frecuencias.at(i)[otro]!= 'F' || frecuencias.at(i)[otro]!= 'A')
+                                while(frecuencias.at(i)[otro]!= 'F' && frecuencias.at(i)[otro]!= 'A'){
+                                    frecu[otro-j-2] = frecuencias.at(i)[otro];
+                                    otro ++;
+                                }
+                                pos = 0;
+                                tamano = 0;
+                                for(pos=0;pos<(otro-j-2);pos++)
+                                         tamano += (frecu[pos].digitValue()) * pow(10,otro-j-3-pos);
+                                ui->Statu->setText(QString::number(tamano));//if()
 
                             } else QMessageBox::warning(this, "Port error", "Error en la transmision");
                         }
@@ -255,7 +264,10 @@ void Widget::on_setFiltro_clicked()
     //int i=0;
     QByteArray datos;
     QString cadena = ui->frecFPA->text();
+    FCalta = ui->frecFPA->text().toInt();
     handShake = false;
+    datos.append("FA");
     datos.append(cadena);
+    datos.append("FA");
     arduino->write(datos);
 }
