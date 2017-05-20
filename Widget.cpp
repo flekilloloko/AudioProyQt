@@ -170,7 +170,7 @@ Widget::~Widget()
 }
 
 void Widget::leerPuertoSerie(){
-    int pos, otro;
+    int pos, otro, j;
     QString valor = 0;
     QTime tiempo;
     int tamano;
@@ -186,7 +186,32 @@ void Widget::leerPuertoSerie(){
     valor = "";
     datosSerie = arduino->readAll();    
     bufferSerie += QString::fromStdString(datosSerie.toStdString());   //aca pa delante nuevo
+    if(bufferSerie.contains("FA" && !handShake)){
+        otro = bufferSerie.indexOf("FA");
+        tamano = bufferSerie.indexOf("AF", otro+1);
+        if(tamano>bufferSerie.size()) pos = tamano;
+        else pos = bufferSerie.size();
+        //if(tamano>0)
+        j=0;
+        for(int i=otro+2 ; i<pos; i++){
+            FCaltaR[j]=bufferSerie[i];
+            j++;
+        }
+        bufferSerie.remove(otro,2);
+        if(pos = tamano){
+            handShake = true;
+            ui->Statu->setText(FCaltaR);
+        }
+    } else if(bufferSerie.contains("AF") && !handShake){
+        otro = bufferSerie.indexOf("AF");
+        tamano = FCaltaR.size();
+        for(int i=0 ; i<otro; i++)
+            FCaltaR[tamano+i]=bufferSerie[i];
+        ui->Statu->setText(FCaltaR);
+        handShake = true;
+    }
     pos = bufferSerie.indexOf("_");
+
     if(pos>=0){
 
             espectro += bufferSerie.left(pos);
@@ -197,7 +222,7 @@ void Widget::leerPuertoSerie(){
             }
             QStringList frecuencias = espectro.split(",");
             tamano = frecuencias.size();
-            //ESTO VA if(tamano!=tamFFT+1) armandoEspectro = false;
+            if(tamano!=tamFFT+1) armandoEspectro = false;
             //if(espectro.size() > 512) armandoEspectro = false;
             if(armandoEspectro){
 
@@ -206,24 +231,9 @@ void Widget::leerPuertoSerie(){
                 bufferSerie.clear();
                 for(int i=0;i<tamFFT;i++) {
                     esdig=true;
-                    for(int j = 0;j<frecuencias.at(i).size();j++){
-                        if(!frecuencias.at(i)[j].isDigit() && frecuencias.at(i)[j] != '.' && frecuencias.at(i)[j] != '-') esdig = false;
-                        if(frecuencias.at(i)[j] == 'F'){
-                            if(frecuencias.at(i)[j+1] == 'A'){
-                                otro = j+2;
-                                while(frecuencias.at(i)[otro]!= 'F' && frecuencias.at(i)[otro]!= 'A'){
-                                    frecu[otro-j-2] = frecuencias.at(i)[otro];
-                                    otro ++;
-                                }
-                                pos = 0;
-                                tamano = 0;
-                                for(pos=0;pos<(otro-j-2);pos++)
-                                         tamano += (frecu[pos].digitValue()) * pow(10,otro-j-3-pos);
-                                ui->Statu->setText(QString::number(tamano));//if()
+                    for(j = 0;j<frecuencias.at(i).size();j++)
+                        if(!frecuencias.at(i)[j].isDigit() && frecuencias.at(i)[j] != '.' && frecuencias.at(i)[j] != '-') esdig = false;                      
 
-                            } else QMessageBox::warning(this, "Port error", "Error en la transmision");
-                        }
-                    }
                     if(esdig && i<tamFFT && frecuencias.at(i) < 600)muestrixs[i]=frecuencias.at(i).toDouble();//(2^1);//     /2
                     else if (i==0)
                         muestrixs[0] = 0;
@@ -264,10 +274,11 @@ void Widget::on_setFiltro_clicked()
     //int i=0;
     QByteArray datos;
     QString cadena = ui->frecFPA->text();
-    FCalta = ui->frecFPA->text().toInt();
+    FCaltaE = ui->frecFPA->text().toInt();
     handShake = false;
     datos.append("FA");
     datos.append(cadena);
     datos.append("FA");
     arduino->write(datos);
+    FCaltaR.clear();
 }

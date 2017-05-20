@@ -29,14 +29,14 @@ private:
     QString arduino_port_name;
     bool arduino_is_available;
     QByteArray datosSerie;
-    QString bufferSerie;
+    QString bufferSerie, FCaltaR;
     bool sincronizado, armandoEspectro;
     QVector<double> x, y;
     int punteroX;
     int indice;
     int len;
     bool handShake;
-    int FCalta;//, FCalta;
+    int FCaltaE;//, FCalta;
     QString espectro;
 
 
