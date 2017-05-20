@@ -19,6 +19,8 @@ public:
 private slots:
     void leerPuertoSerie();
 
+    void on_setFiltro_clicked();
+
 private:
     Ui::Widget *ui;
     QSerialPort *arduino;
@@ -32,6 +34,9 @@ private:
     QVector<double> x, y;
     int punteroX;
     int indice;
+    int len;
+    bool handShake;
+    int FCbaja;//, FCalta;
     QString espectro;
 
 
