@@ -170,8 +170,8 @@ Widget::~Widget()
 }
 
 void Widget::leerPuertoSerie(){
-    int pos, otro, j;
-    QString valor = 0;
+    int pos, otro, otro2, j;
+    QString valor = 0, todo;
     QTime tiempo;
     int tamano;
     bool esdig=false;
@@ -186,30 +186,60 @@ void Widget::leerPuertoSerie(){
     valor = "";
     datosSerie = arduino->readAll();    
     bufferSerie += QString::fromStdString(datosSerie.toStdString());   //aca pa delante nuevo
-    if(bufferSerie.contains("FA" && !handShake)){
-        otro = bufferSerie.indexOf("FA");
-        tamano = bufferSerie.indexOf("AF", otro+1);
-        if(tamano>bufferSerie.size()) pos = tamano;
-        else pos = bufferSerie.size();
+    tamano = espectro.size();
+    todo = espectro + bufferSerie;/*
+    if(todo.contains("FA")  && !handShake){
+        otro = todo.indexOf("FA");
+        otro2 = todo.indexOf("AF", otro+1);
+        if(otro2>=0) pos = otro2;
+        else pos = todo.size();
+
+        if(otro>=0){
+            if(otro>=espectro.size()){
+                bufferSerie.remove(otro-espectro.size() , pos-espectro.size()-1);
+            } else{
+                if(otro2>=espectro.size()){
+                    espectro.chop(espectro.size()-1-otro);
+                } else{
+                    espectro.remove(otro, espectro.size()-otro2);
+                }
+            }
+        }
         //if(tamano>0)
         j=0;
         for(int i=otro+2 ; i<pos; i++){
-            FCaltaR[j]=bufferSerie[i];
+            FCaltaR[j]=todo[i];
             j++;
         }
-        bufferSerie.remove(otro,2);
-        if(pos = tamano){
+
+        if(pos == otro2){
             handShake = true;
             ui->Statu->setText(FCaltaR);
+            FCaltaR.clear();
         }
-    } else if(bufferSerie.contains("AF") && !handShake){
-        otro = bufferSerie.indexOf("AF");
-        tamano = FCaltaR.size();
-        for(int i=0 ; i<otro; i++)
-            FCaltaR[tamano+i]=bufferSerie[i];
+    } else */
+    if(todo.contains("AF") && !handShake){
+        otro = todo.indexOf("FA");
+        pos = todo.indexOf("AF", otro+1);
+        if(otro>=espectro.size()){
+            bufferSerie.remove(otro-espectro.size() , pos-espectro.size()-1);
+        } else{
+            if(pos>=espectro.size()){
+                espectro.chop(espectro.size()-otro);
+                bufferSerie.remove(0,pos-espectro.size()+1);
+            } else{
+                espectro.remove(otro, espectro.size()-pos);
+            }
+        }
+
+        //otro2 = FCaltaR.size();
+        for(int i=0 ; i<(pos-otro-2); i++)
+            FCaltaR[i]=todo[otro + i + 2];
         ui->Statu->setText(FCaltaR);
         handShake = true;
+        FCaltaR.clear();
     }
+
     pos = bufferSerie.indexOf("_");
 
     if(pos>=0){
@@ -227,44 +257,44 @@ void Widget::leerPuertoSerie(){
             if(armandoEspectro){
 
 
-                espectro = bufferSerie.right(bufferSerie.size()-pos-1);
-                bufferSerie.clear();
-                for(int i=0;i<tamFFT;i++) {
-                    esdig=true;
-                    for(j = 0;j<frecuencias.at(i).size();j++)
-                        if(!frecuencias.at(i)[j].isDigit() && frecuencias.at(i)[j] != '.' && frecuencias.at(i)[j] != '-') esdig = false;                      
-
-                    if(esdig && i<tamFFT && frecuencias.at(i) < 600)muestrixs[i]=frecuencias.at(i).toDouble();//(2^1);//     /2
-                    else if (i==0)
-                        muestrixs[0] = 0;
-                    else
-                        muestrixs[i] = muestrixs[i-1];
-                    otro = i;
-                }
-                frecuencias.clear();
-                if(otro==tamFFT-1)
-                    fft_object.do_fft(espectrix,muestrixs);
-				for (int i =1;i<tamFFT/2-1;i++)
-					espec[i] = espectrix[i] + espectrix[tamFFT/2+i]* unImag ;
-
-				espec[0]=espectrix[0];
-				espec[tamFFT/2]=espectrix[tamFFT/2];
-                for (int i=0; i<tamFFT/2; i++)
-                    y[i] = std::abs(espec[i]);//14; // div 5 para entradas con 1.0 max
-
-                ui->grafico->graph(0)->setData(x,y);
-                ui->grafico->replot();
-            } else {
-
-                espectro = bufferSerie.right(bufferSerie.size()-pos-1);
-
-                bufferSerie.clear();
-                }
-
-        }else{
-            espectro += bufferSerie;
+            espectro = bufferSerie.right(bufferSerie.size()-pos-1);
             bufferSerie.clear();
-        }
+            for(int i=0;i<tamFFT;i++) {
+                esdig=true;
+                for(j = 0;j<frecuencias.at(i).size();j++)
+                    if(!frecuencias.at(i)[j].isDigit() && frecuencias.at(i)[j] != '.' && frecuencias.at(i)[j] != '-') esdig = false;
+
+                if(esdig && i<tamFFT && frecuencias.at(i) < 600)muestrixs[i]=frecuencias.at(i).toDouble();//(2^1);//     /2
+                else if (i==0)
+                    muestrixs[0] = 0;
+                else
+                    muestrixs[i] = muestrixs[i-1];
+                otro = i;
+           }
+            frecuencias.clear();
+            if(otro==tamFFT-1)
+                fft_object.do_fft(espectrix,muestrixs);
+            for (int i =1;i<tamFFT/2-1;i++)
+                espec[i] = espectrix[i] + espectrix[tamFFT/2+i]* unImag ;
+
+            espec[0]=espectrix[0];
+            espec[tamFFT/2]=espectrix[tamFFT/2];
+            for (int i=0; i<tamFFT/2; i++)
+                y[i] = std::abs(espec[i]);//14; // div 5 para entradas con 1.0 max
+
+            ui->grafico->graph(0)->setData(x,y);
+            ui->grafico->replot();
+        } else {
+
+            espectro = bufferSerie.right(bufferSerie.size()-pos-1);
+
+            bufferSerie.clear();
+            }
+
+    }else{
+        espectro += bufferSerie;
+        bufferSerie.clear();
+    }
         //qDebug() << tiempo.elapsed();
 
 }
